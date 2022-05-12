@@ -10,19 +10,63 @@ app.use(cors());
 const users = [];
 
 function checksExistsUserAccount(request, response, next) {
-  // Complete aqui
+  const {username} = request.headers;
+
+  const user = users.find(user => user.username = username)
+
+  if(!user){
+    return response.status(404).json({error: "user not found"})
+  }
+
+  request.user = user;
+  next()
 }
 
 function checksCreateTodosUserAvailability(request, response, next) {
-  // Complete aqui
+  const { user } = request
+  if(user.pro || user.todos.length < 10){
+    return next()
+  }
+  return response.status(403)
 }
 
 function checksTodoExists(request, response, next) {
-  // Complete aqui
+  const {username} = request.headers
+  const {id} = request.params
+
+  const ifIsUUID = validate(id, 4)
+
+  if(!ifIsUUID){
+    return response.status(400).json({error: "todo is not uuid"})
+  }
+
+  const user = users.find(user => user.username === username)
+
+  if(!user){
+    return response.status(404).json({error: "todo not found"})
+  }
+
+  const todo = user.todos.find(todo => todo.id === id)
+
+  if(!todo){
+    return response.status(404).json({error: "todo not found"})
+  }
+
+  request.todo = todo;
+  request.user = user;
+  next()
 }
 
 function findUserById(request, response, next) {
-  // Complete aqui
+  const {id} = request.params
+
+  const user = users.find(user => user.id === id)
+
+  if(!user){
+    return response.status(404).json({error: "user not found"})
+  }
+  request.user = user;
+  next()
 }
 
 app.post('/users', (request, response) => {
@@ -108,7 +152,6 @@ app.patch('/todos/:id/done', checksTodoExists, (request, response) => {
 
 app.delete('/todos/:id', checksExistsUserAccount, checksTodoExists, (request, response) => {
   const { user, todo } = request;
-
   const todoIndex = user.todos.indexOf(todo);
 
   if (todoIndex === -1) {
